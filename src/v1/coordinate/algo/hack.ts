@@ -1,13 +1,13 @@
 import { NS, Server } from '@ns'
-import { Allocator, Allocation, WorkType } from 'coordinate/allocator.js'
-import { Hack } from 'coordinate/types'
+import { Allocator, Allocation, WorkType } from '/v1/coordinate/allocator.js'
+import { Hack } from '/v1/coordinate/types'
 
 export function hackCandidates(ns: NS, targets: Server[]): Hack[] {
     const eligable = targets.filter((target) => {
         return (target.moneyMax ?? 0)> 0 && 
-            (target.moneyAvailable ?? 0) > ((target.moneyMax ?? 0) * 0.85) &&
-            ns.getServerSecurityLevel(target.hostname) <= ns.getServerMinSecurityLevel(target.hostname) * 1.1 &&
-            ns.hackAnalyzeChance(target.hostname) > 0.1
+            (target.moneyAvailable ?? 0) > ((target.moneyMax ?? 0) * 0.5) 
+            && ns.getServerSecurityLevel(target.hostname) <= ns.getServerMinSecurityLevel(target.hostname) * 1.1 
+            && ns.hackAnalyzeChance(target.hostname) > 0.1
     })
 
     const inOrder = eligable
