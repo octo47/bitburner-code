@@ -2,11 +2,7 @@ import { NS } from '@ns'
 import { Scanner } from "/lib/scanner";
 import { ServerData } from '/v2/util/serverdata';
 import { ttabulate } from '/lib/tabulate';
-
-const workerGrow = "/worker/grow_once.js"
-const workerHack = "/worker/hack_once.js"
-const workerWeaken = "/worker/weaken_once.js"
-
+import { allWorkTypes, workTypeScriptName } from '/v2/worker/workers';
 
 class Simulator {
 
@@ -24,21 +20,14 @@ class Simulator {
             sizeMb: number
         }
 
-
-        const scripts: ScriptRow[] = [
-            {
-               path: workerGrow,
-               sizeMb: this.ns.getScriptRam(workerGrow)
-            },
-            {
-                path: workerWeaken,
-                sizeMb: this.ns.getScriptRam(workerWeaken)
-             },
-             {
-                path: workerHack,
-                sizeMb: this.ns.getScriptRam(workerHack)
-             },
-          ]
+        const scripts: ScriptRow[] = []
+        for( const wt of allWorkTypes) {
+            const scriptPath = workTypeScriptName(wt)
+            scripts.push({
+                path: scriptPath,
+                sizeMb: this.ns.getScriptRam(scriptPath)
+             })
+        }
 
         ttabulate(this.ns, scripts)
 

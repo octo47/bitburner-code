@@ -15,9 +15,9 @@ export type Allocation = {
     threads: number;
 }
 
-const workerGrow = "/worker/grow_once.js"
-const workerHack = "/worker/hack_once.js"
-const workerWeaken = "/worker/weaken_once.js"
+const workerGrow = "/v1/worker/grow_once.js"
+const workerHack = "/v1/worker/hack_once.js"
+const workerWeaken = "/v1/worker/weaken_once.js"
 
 export type WorkTypeShare = Map<WorkType, number>
 
