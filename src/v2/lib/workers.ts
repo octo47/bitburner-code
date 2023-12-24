@@ -1,3 +1,5 @@
+import { NS } from '@ns'
+
 const workerGrow = "/v2/worker/grow_once.js"
 const workerHack = "/v2/worker/hack_once.js"
 const workerWeaken = "/v2/worker/weaken_once.js"
@@ -30,4 +32,10 @@ export function scriptWorkType(script: string): WorkType | undefined {
         case workerWeaken: return WorkType.weaking; break
         default: return undefined
     }
+}
+
+export function workerRAM(ns: NS): number {
+    return Math.max(...allWorkTypes
+        .map((wt) => workTypeScriptName(wt))
+        .map((path) => ns.getScriptRam(path)))
 }

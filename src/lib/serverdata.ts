@@ -1,5 +1,6 @@
 import { NS } from '@ns'
 
+
 export class ServerData {
     public hostname: string
     public path: string[]
@@ -7,7 +8,6 @@ export class ServerData {
     public owned: boolean
     public backdoor: boolean
     public security: SecurityData
-    public money: MoneyData | undefined
 
     public constructor(ns: NS, hostname: string, path: string[] = []) {
         const server = ns.getServer(hostname)
@@ -18,7 +18,27 @@ export class ServerData {
         this.hacked = server.hasAdminRights,
         this.backdoor = server.backdoorInstalled ?? false,
         this.security = newSecurityData(ns, hostname)
-        this.money = newMoneyData(ns, hostname)
+    }
+
+}
+
+export class TargetServer extends ServerData {
+    public money: MoneyData
+
+    constructor(ns: NS, hostname: string, path: string[] = []) {
+        super(ns, hostname, path)
+        const maybeMoney = newMoneyData(ns, hostname)
+        if (maybeMoney === undefined) {
+            throw "Server has no money"
+        }
+        this.money = maybeMoney
+    }
+
+    targetScore(): number {
+        return (this.money?.maxMoney ?? 0) 
+            * (this.money?.growthRate ?? Infinity)
+            / ((this.money?.growthTimeMs ?? Infinity) + this.security.weakenTimeMs)
+            / this.security.minSecurity
     }
 }
 

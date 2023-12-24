@@ -1,8 +1,8 @@
 import { NS } from '@ns'
 import { Scanner } from "/lib/scanner";
-import { ServerData } from '../../lib/serverdata';
+import { TargetServer } from '/lib/serverdata';
 import { ttabulate } from '/lib/tabulate';
-import { allWorkTypes, workTypeScriptName } from '/v2/worker/workers';
+import { allWorkTypes, workTypeScriptName } from '/v2/lib/workers';
 
 class Simulator {
 
@@ -31,9 +31,7 @@ class Simulator {
 
         ttabulate(this.ns, scripts)
 
-        const targets: ServerData[] = scanner.scan(this.ns).servers
-        .filter((sd) => !sd.owned)
-        .filter((sd) => sd.money !== undefined)
+        const targets: TargetServer[] = scanner.findTargets(this.ns)
 
         type WeakenRow = {
             hostname: string
@@ -56,7 +54,7 @@ class Simulator {
                 securityDiff: Math.ceil(sd.security.securityLevel - sd.security.minSecurity),
                 securityThreads: sd.security.maxThreads,
                 weakenTime: this.ns.tFormat(sd.security.weakenTimeMs),
-                score: this.score(sd)
+                score: sd.targetScore()
             }}))
             .filter((wr) => wr.securityDiff > 0)
         weakenTargets.sort((a, b) => b.score - a.score)
@@ -69,18 +67,11 @@ class Simulator {
                 hostname: sd.hostname,
                 growth: sd.money?.growthRate ?? 0,
                 growthTime: this.ns.tFormat(sd.money?.growthTimeMs ?? 0),
-                score: this.score(sd)
+                score: sd.targetScore()
             }})
         moneyTargets.sort((a, b) => b.score - a.score)
 
         ttabulate(this.ns, moneyTargets)
-    }
-
-    score(serverData: ServerData): number {
-        return (serverData.money?.maxMoney ?? 0) 
-            * (serverData.money?.growthRate ?? Infinity)
-            / ((serverData.money?.growthTimeMs ?? Infinity) + serverData.security.weakenTimeMs)
-            / serverData.security.minSecurity
     }
 }
 

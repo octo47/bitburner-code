@@ -10,7 +10,6 @@ export async function main(ns : NS) : Promise<void> {
 
     const servers = new Scanner()
         .scan(ns)
-        .servers
         .map((item) => ns.getServer(item.hostname))
 
     const inProgress = new Set<string>()
