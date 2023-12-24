@@ -3,6 +3,10 @@ import { Scanner } from "/lib/scanner";
 import { ServerData } from '/v2/util/serverdata';
 import { ttabulate } from '/lib/tabulate';
 
+const workerGrow = "/worker/grow_once.js"
+const workerHack = "/worker/hack_once.js"
+const workerWeaken = "/worker/weaken_once.js"
+
 
 class Simulator {
 
@@ -15,7 +19,28 @@ class Simulator {
     simulate() {
         const scanner = new Scanner()
 
-        const expectedThreads = 130
+        type ScriptRow = {
+            path: string
+            sizeMb: number
+        }
+
+
+        const scripts: ScriptRow[] = [
+            {
+               path: workerGrow,
+               sizeMb: this.ns.getScriptRam(workerGrow)
+            },
+            {
+                path: workerWeaken,
+                sizeMb: this.ns.getScriptRam(workerWeaken)
+             },
+             {
+                path: workerHack,
+                sizeMb: this.ns.getScriptRam(workerHack)
+             },
+          ]
+
+        ttabulate(this.ns, scripts)
 
         const targets: ServerData[] = scanner.scan(this.ns).hosts
         .map((hd) => new ServerData(this.ns, hd))
