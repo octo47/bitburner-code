@@ -1,6 +1,6 @@
 import { NS } from '@ns'
 import { Scanner } from "/lib/scanner";
-import { ServerData } from '/v2/util/serverdata';
+import { ServerData } from '../../lib/serverdata';
 import { ttabulate } from '/lib/tabulate';
 import { allWorkTypes, workTypeScriptName } from '/v2/worker/workers';
 
@@ -31,9 +31,8 @@ class Simulator {
 
         ttabulate(this.ns, scripts)
 
-        const targets: ServerData[] = scanner.scan(this.ns).hosts
-        .map((hd) => new ServerData(this.ns, hd))
-        .filter((sd) => !sd.hostData.owned)
+        const targets: ServerData[] = scanner.scan(this.ns).servers
+        .filter((sd) => !sd.owned)
         .filter((sd) => sd.money !== undefined)
 
         type WeakenRow = {
@@ -53,7 +52,7 @@ class Simulator {
 
         const weakenTargets: WeakenRow[] = targets
             .map((sd => { return {
-                hostname: sd.hostData.hostname,
+                hostname: sd.hostname,
                 securityDiff: Math.ceil(sd.security.securityLevel - sd.security.minSecurity),
                 securityThreads: sd.security.maxThreads,
                 weakenTime: this.ns.tFormat(sd.security.weakenTimeMs),
@@ -67,7 +66,7 @@ class Simulator {
         const moneyTargets: MoneyRow[] = targets
             .filter((sd) => sd.security.securityLevel - sd.security.minSecurity < 5)
             .map((sd) => { return {
-                hostname: sd.hostData.hostname,
+                hostname: sd.hostname,
                 growth: sd.money?.growthRate ?? 0,
                 growthTime: this.ns.tFormat(sd.money?.growthTimeMs ?? 0),
                 score: this.score(sd)
