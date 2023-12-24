@@ -15,7 +15,7 @@ export async function main(ns : NS) : Promise<void> {
     while(true) {
         const servers = new Scanner()
         .scan(ns)
-        .hosts
+        .servers
         .map((item) => ns.getServer(item.hostname))
 
         const inProgress: {[worker:string]: InProgress} = {}

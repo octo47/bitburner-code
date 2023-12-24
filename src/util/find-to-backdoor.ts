@@ -11,7 +11,7 @@ export async function main(ns : NS) : Promise<void> {
 
     const servers: ServerRow[] = Array.from(new Scanner()
         .scan(ns)
-        .hosts
+        .servers
         .filter((srv) => !srv.owned)
         .filter((srv) => srv.hacked)
         .filter((srv) => !srv.backdoor))
