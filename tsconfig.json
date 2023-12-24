@@ -8,6 +8,7 @@
     "noImplicitThis": true,
     "esModuleInterop": true,
     "inlineSourceMap": true,
+    "useUnknownInCatchVariables": true,
     "strict": true,
     "rootDir": "src/",
     "outDir": "dist/",

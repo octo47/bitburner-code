@@ -1,5 +1,5 @@
-import { NS } from "../NetscriptDefinitions"
-import { Queue } from "./lib/queue"
+import { NS } from "../../NetscriptDefinitions"
+import { Queue } from "/lib/queue"
 
 export async function main(ns: NS): Promise<void> {
     ns.disableLog("getServerMoneyAvailable")
