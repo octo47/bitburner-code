@@ -1,4 +1,4 @@
-import { NS, NodeStats } from '@ns'
+import { NS } from '@ns'
 import { tabulate } from '/lib/tabulate';
 
 const targetNodes = 30

@@ -1,12 +1,14 @@
 import { NS } from '@ns'
 
 export async function ttabulate( ns: NS, 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     objects: Record<string, any>[], 
     keys = Object.keys(objects[0]||{})): Promise<void> {
         return tabulate(ns, objects, keys, true)
 }
 
 export async function tabulate( ns: NS, 
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                 objects: Record<string, any>[], 
                                 keys = Object.keys(objects[0]||{}),
                                 terminal = false): Promise<void> {
