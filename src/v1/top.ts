@@ -13,9 +13,8 @@ export async function main(ns : NS) : Promise<void> {
 
     // eslint-disable-next-line no-constant-condition
     while(true) {
-        const servers = new Scanner()
-        .scan(ns)
-        .servers
+        const servers = (await new Scanner()
+        .scan(ns))
         .map((item) => ns.getServer(item.hostname))
 
         const inProgress: {[worker:string]: InProgress} = {}

@@ -9,9 +9,9 @@ export async function main(ns : NS) : Promise<void> {
         command: string
     }
 
-    const servers: ServerRow[] = Array.from(new Scanner()
-        .scan(ns)
-        .servers
+    let servers: ServerRow[] = Array.from(
+        (await new Scanner()
+        .scan(ns))
         .filter((srv) => !srv.owned)
         .filter((srv) => srv.hacked)
         .filter((srv) => !srv.backdoor))
@@ -23,6 +23,10 @@ export async function main(ns : NS) : Promise<void> {
         }})
 
     servers.sort((a, b) => a.hostname.localeCompare(b.hostname))
+
+    if (ns.args.length === 1) {
+        servers = servers.filter((srv) => srv.hostname === ns.args[0])
+    }
 
     ttabulate(ns, servers)
 }

@@ -1,27 +1,14 @@
 import { NS, ProcessInfo } from '@ns'
 
 export async function killProcess(ns: NS, worker: string, ps: ProcessInfo): Promise<void> {
-    ns.print({
-        acion: "kill", 
-        worker: worker, 
-        script: ps.filename,  
-        pid: ps.pid
-    })
-
     ns.kill(ps.filename, worker, ...ps.args)
 
     while (ns.getRunningScript(ps.pid, worker, ...ps.args)) {
-        await ns.sleep(100)
+        await ns.sleep(10)
     }
 }
 
 export async function killAll(ns: NS, hostname: string): Promise<void> {
-    ns.print({
-        acion: "killall", 
-        hostname: hostname, 
-    })
-
-
     while (ns.ps(hostname).length > 0) {
         ns.killall(hostname)
         await ns.sleep(100)

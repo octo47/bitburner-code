@@ -42,9 +42,8 @@ export class Coordinator {
 
     async runAllocations(ns: NS): Promise<void> {
 
-        const servers = new Scanner()
-            .scan(ns)
-            .servers
+        const servers = (await new Scanner()
+            .scan(ns))
             .map((item) => ns.getServer(item.hostname))
 
         const inProgress = new Set<string>()

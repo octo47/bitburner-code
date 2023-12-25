@@ -1,7 +1,7 @@
 import { NS } from '@ns'
 import { tabulate } from '/lib/tabulate';
 
-const targetNodes = 30
+const targetNodes = 40
 const targetCores = 16
 const targetRam = 64
 const targetLevel = 200   
