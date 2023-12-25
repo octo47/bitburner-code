@@ -29,3 +29,5 @@ The algorithm is simple:
 * util/find-to-backdoor.js - prints out commands to backdoor any server including whole path of connects
 * util/rm-all-hosts.js - used to clean all machines from scripts - used to upgrade scripts
 * util/rm-all.js - does cleanup on a single host
+
+![Batcher](img/batcher.png)
