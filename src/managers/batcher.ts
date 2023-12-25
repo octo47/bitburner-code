@@ -1,9 +1,9 @@
 import { NS } from "@ns"
-import { Botnet } from "/v2/lib/botnet"
-import { batchAllocations } from "/v2/batcher/batch"
-import { TargetServer } from "/lib/serverdata"
-import { Scanner } from "/lib/scanner"
+import { batchAllocations } from "/batcher/batch"
+import { Botnet } from "/lib/botnet"
 import { error } from "/lib/log"
+import { Scanner } from "/lib/scanner"
+import { TargetServer } from "/lib/serverdata"
 
 class Batcher {
     private ns: NS

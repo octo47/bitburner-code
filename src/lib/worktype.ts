@@ -1,8 +1,8 @@
 import { NS } from '@ns'
 
-const workerGrow = "/v2/worker/grow_once.js"
-const workerHack = "/v2/worker/hack_once.js"
-const workerWeaken = "/v2/worker/weaken_once.js"
+const workerWeaken = "/worker/weaken_once.js"
+const workerGrow = "/worker/grow_once.js"
+const workerHack = "/worker/hack_once.js"
 
 export enum WorkType {
     weaking,

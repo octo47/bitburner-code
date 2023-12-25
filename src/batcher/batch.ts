@@ -1,7 +1,7 @@
 import { NS } from '@ns'
 import { TargetServer } from '/lib/serverdata';
-import { Allocation } from '/v2/lib/allocation';
-import { WorkType } from '/v2/lib/worktype';
+import { Allocation } from '/lib/allocation';
+import { WorkType } from '/lib/worktype';
 import { makeid } from '/lib/process';
 
 

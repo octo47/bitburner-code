@@ -1,8 +1,8 @@
 import { NS } from '@ns'
+import { allWorkTypes, workTypeScriptName } from '/lib/worktype';
 import { Scanner } from "/lib/scanner";
 import { TargetServer } from '/lib/serverdata';
 import { ttabulate } from '/lib/tabulate';
-import { allWorkTypes, workTypeScriptName } from '/v2/lib/worktype';
 
 class Simulator {
 
