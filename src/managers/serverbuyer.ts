@@ -1,4 +1,5 @@
-import { NS, Server } from "../../NetscriptDefinitions"
+import { NS, Server } from "@ns"
+
 import { tabulate } from "/lib/tabulate"
 import { log } from "/lib/log"
 import { Stopwatch } from "/lib/time"
@@ -23,7 +24,6 @@ class ServerBuyer {
         const servers = this.ns.getPurchasedServers()
             .map((name) => this.ns.getServer(name))
 
-        log(ns, `Discovered servers: ${servers.length}`)
 
         if (servers.length > 0) {
             const maxRam = servers.reduce((a, e) => Math.max(a, e.maxRam), 3)

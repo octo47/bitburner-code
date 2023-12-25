@@ -1,4 +1,4 @@
-import { WorkType } from '/v2/lib/worktype'
+import { WorkType } from '/lib/worktype'
 
 export type Allocation = {
     id: string

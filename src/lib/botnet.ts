@@ -1,12 +1,12 @@
 import { NS } from '@ns'
-import { workerRAM, workerTypeRAM, workTypeScriptName } from '/v2/lib/worktype';
+import { Allocation } from './allocation';
+import { error } from '/lib/log';
 import { Scanner } from '/lib/scanner';
 import { ServerData } from '/lib/serverdata';
-import { Stopwatch } from '/lib/time';
-import { Allocation } from '/v2/lib/allocation';
-import { tabulate } from '/lib/tabulate';
-import { error } from '/lib/log';
 import { SetWithContentEquality } from '/lib/set';
+import { Stopwatch } from '/lib/time';
+import { tabulate } from '/lib/tabulate';
+import { workerRAM, workerTypeRAM, workTypeScriptName } from '/lib/worktype';
 
 type ServerAssignment = {
     worker: string
