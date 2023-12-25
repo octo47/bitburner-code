@@ -1,6 +1,5 @@
 import { NS, Server } from '@ns'
 import { Queue } from 'lib/queue'
-import { ServerList } from '/lib/serverlist'
 import { ServerData, TargetServer } from '/lib/serverdata'
 
 export type ScannerConfig = {
@@ -19,18 +18,18 @@ type ScannedServer = {
 
 export class Scanner {
 
-    scan(ns: NS, config: ScannerConfig = defaultScannerConfig): ServerData[] {
-        return this.scanHosts(ns, config)
+    async scan(ns: NS, config: ScannerConfig = defaultScannerConfig): Promise<ServerData[]> {
+        return (await this.scanHosts(ns, config))
             .map((host) => new ServerData(ns, host.hostname, host.path))
     }
 
-    findTargets(ns: NS, config: ScannerConfig = defaultScannerConfig): TargetServer[] {
-        return this.scanHosts(ns, config)
+    async findTargets(ns: NS, config: ScannerConfig = defaultScannerConfig): Promise<TargetServer[]> {
+        return (await this.scanHosts(ns, config))
             .filter((host) => host.server.moneyMax ?? 0 > 0)
             .map((host) => new TargetServer(ns, host.hostname, host.path))
     }   
 
-    scanHosts(ns: NS, config: ScannerConfig = defaultScannerConfig): ScannedServer[] {
+    async scanHosts(ns: NS, config: ScannerConfig = defaultScannerConfig): Promise<ScannedServer[]> {
         
         const toScan = new Queue<ScannedServer>()
 

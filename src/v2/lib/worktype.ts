@@ -39,3 +39,12 @@ export function workerRAM(ns: NS): number {
         .map((wt) => workTypeScriptName(wt))
         .map((path) => ns.getScriptRam(path)))
 }
+
+export function workerTypeRAM(ns: NS, workType: WorkType): number {
+    const script = workTypeScriptName(workType)
+    const scriptRam = ns.getScriptRam(script)
+    if (scriptRam === 0) {
+        throw `Script not found to measure RAM requirements: script ${script} for ${workType}`
+    }
+    return scriptRam
+}
