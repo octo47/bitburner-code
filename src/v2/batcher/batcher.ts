@@ -3,8 +3,7 @@ import { Botnet } from "/v2/lib/botnet"
 import { batchAllocations } from "/v2/batcher/batch"
 import { TargetServer } from "/lib/serverdata"
 import { Scanner } from "/lib/scanner"
-
-const defaultTarget = "rho-construction"
+import { error } from "/lib/log"
 
 class Batcher {
     private ns: NS
@@ -19,15 +18,30 @@ class Batcher {
 
     async loop() {
 
+        const activeTargets = await this.botnet.activeTargets()
+
         let targets: TargetServer[] = (await this.scanner.findTargets(this.ns))
             .filter((target) => target.hacked)
-            .filter((target) => !this.botnet.targets.has(target.hostname))
+            .filter((target) => !activeTargets.has(target.hostname))
         targets.sort((a, b) => b.targetScore() - a.targetScore())
+
+        const allocated = new Set<string>()
 
         while (targets.length > 0 && this.botnet.hasCapacity()) {
             const target = targets[0]
-            targets = targets.splice(1)
+            targets = targets.slice(1)
             const allocations = await batchAllocations(this.ns, target.hostname)
+            for (const allocation of allocations) {
+                if (allocated.has(allocation.target)) {
+                    error(this.ns, `Duplicate target in allocated: ${allocation.target}`)
+                    continue
+                }
+                if (activeTargets.has(target.hostname)) {
+                    error(this.ns, `Botnet already running target: ${allocation.target}`)
+                    continue
+                }
+                allocated.add(allocation.target)
+            }
             await this.botnet.startAllocations(allocations)
         }
     }
@@ -35,7 +49,7 @@ class Batcher {
     async report() {
         this.ns.clearLog()
         this.ns.print("Batcher running.")
-        this.botnet.report() 
+        await this.botnet.report() 
     }
 }
 

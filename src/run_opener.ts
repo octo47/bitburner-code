@@ -19,7 +19,7 @@ export async function main(ns : NS) : Promise<void> {
     // eslint-disable-next-line no-constant-condition
     while (true) {
         const scanner = new Scanner()
-        const hosts = scanner.scan(ns)
+        const hosts = await scanner.scan(ns)
 
         const toHack= hosts.filter((elem) => elem.hacked == false)
 

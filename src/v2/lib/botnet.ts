@@ -4,8 +4,8 @@ import { Scanner } from '/lib/scanner';
 import { ServerData } from '/lib/serverdata';
 import { Stopwatch } from '/lib/time';
 import { Allocation } from '/v2/lib/allocation';
-import { tabulate, ttabulate } from '/lib/tabulate';
-import { error, log } from '/lib/log';
+import { tabulate } from '/lib/tabulate';
+import { error } from '/lib/log';
 import { SetWithContentEquality } from '/lib/set';
 
 type ServerAssignment = {
@@ -22,36 +22,42 @@ export class Botnet {
     private totalRAM = 0
 
     private workers = new Map<string, number>()
-    public allocations = new SetWithContentEquality<Allocation>((item) => item.id)
-    public targets = new Set<string>()
+    private allocations = new SetWithContentEquality<Allocation>((item) => item.id)
+    private targets = new Set<string>()
 
     public constructor(ns: NS) {
         this.ns = ns
         this.started = new Stopwatch(ns)
 
-        this.refreshWorkers()
+        this.refresh()
     }
 
     public async startAllocations(allocations: Allocation[]) {
         const assignments: ServerAssignment[] = []
-        await this.refreshWorkers()
+        await this.refresh()
         for (const allocation of allocations) {
             const allocated = await this.allocateWorkers(allocation)
             allocated
                 .forEach((elem) => assignments.push(elem))
         }
-
-        ttabulate(this.ns, assignments)
-
         for (const assignment of assignments) {
             await this.execute(assignment)
         }
     }
 
+    public async activeTargets(): Promise<Set<string>> {
+        await this.refresh()
+        return new Set(this.targets)
+    }
+
+    public async targetAllocations(target: string): Promise<Allocation[]> {
+        await this.refresh()
+        return Array.from(this.allocations.values()
+            .filter((item) => item.target === target))
+    }
+
     private async allocateWorkers(allocation: Allocation): Promise<ServerAssignment[]> {
         const assignments: ServerAssignment[] = []
-
-        log(this.ns, `Allocating workers.`)
 
         let requiredThreads = allocation.threads
         // TODO: use
@@ -78,10 +84,11 @@ export class Botnet {
         return assignments
     }
 
-    private async refreshWorkers() {
+    public async refresh() {
 
         this.workers.clear()
         this.targets.clear()
+        this.allocations.clear()
         this.totalRAM = 0
         this.availableRAM = 0
 
@@ -111,7 +118,7 @@ export class Botnet {
 
     private async findRunningAllocations(worker: string): Promise<Allocation[]> {
 
-        const allocations = new Set<Allocation>()
+        const allocations = new SetWithContentEquality<Allocation>((item) => item.id)
 
         this.ns.ps(worker).forEach((pi) =>  {
             if (pi.args.length == 4 && pi.args[2] === "allocation") {
@@ -133,28 +140,28 @@ export class Botnet {
         if (!this.ns.scp(script, server)) {
             throw `Failed to copy ${script} to ${server}`
         }
-        let result = "launched"
         if (!this.ns.exec(script, server, 
                 assignment.threads, 
                 allocation.target, 
                 allocation.additionalTimeMs ?? 0,
                 "allocation",
                 JSON.stringify(assignment.allocation))) {
-                result = "failed"
+                error(this.ns, JSON.stringify({
+                    "server": server,
+                    "allocation": allocation
+                }))
         }
-        log(this.ns, JSON.stringify({
-            "action": result,
-            "server": server,
-            "allocation": allocation
-        }))
     }
 
-    public report() {
+    public async report() {
         this.ns.print(`Botnet: running for ${this.started.elapsedFormatted()}`)
-        this.ns.print(`RAM: used ${this.totalRAM-this.availableRAM}Gb of ${this.totalRAM}Gb`)
+        this.ns.print(`RAM: used ${Math.floor(this.totalRAM-this.availableRAM)}Gb of ${this.totalRAM}Gb`)
 
         this.ns.print(`Active allocations`)
-        tabulate(this.ns, Array.from(this.allocations.values()))
+        const allocations =  Array.from(this.allocations.values())
+        allocations.sort((a, b) => a.completionTimeMs - b.completionTimeMs)
+//        allocations.sort((a, b) => a.target.localeCompare(b.target))
+        tabulate(this.ns, allocations)
     }
 
     public hasCapacity(): boolean {

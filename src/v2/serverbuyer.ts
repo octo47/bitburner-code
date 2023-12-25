@@ -1,11 +1,12 @@
 import { NS, Server } from "../../NetscriptDefinitions"
 import { tabulate } from "/lib/tabulate"
+import { log } from "/lib/log"
+import { Stopwatch } from "/lib/time"
 
-const prefix = "π-"
+const prefix = "aaa-worker-"
 
 class ServerBuyer {
     private ns: NS
-    private reserveMoneyFraction: number
 
     private nameCounter = 1
     private multi = 2
@@ -14,15 +15,15 @@ class ServerBuyer {
     private lastTimeTried = new Date().getTime()
 
 
-    constructor(ns: NS, 
-                reserveMoneyFraction = 0.5) {
+    constructor(ns: NS) {
         this.ns = ns
         this.maxRam = ns.getPurchasedServerMaxRam()
         this.maxServers = ns.getPurchasedServerLimit()
-        this.reserveMoneyFraction = reserveMoneyFraction
 
         const servers = this.ns.getPurchasedServers()
             .map((name) => this.ns.getServer(name))
+
+        log(ns, `Discovered servers: ${servers.length}`)
 
         if (servers.length > 0) {
             const maxRam = servers.reduce((a, e) => Math.max(a, e.maxRam), 3)
@@ -36,7 +37,6 @@ class ServerBuyer {
         while (ns.getPurchasedServerCost(Math.pow(2, this.multi)) < ns.getPlayer().money) 
             this.multi++
         this.multi = Math.max(2, this.multi-1)
-
     }
 
     canBuyMore() {
@@ -52,20 +52,18 @@ class ServerBuyer {
 
         servers.sort((a, b) => a.ramUsed - b.ramUsed)
 
-
         const triedSince = this.ns.tFormat(
             new Date().getTime() - this.lastTimeTried)
 
         const ram = Math.pow(2, this.multi)
         const cost = this.ns.getPurchasedServerCost(ram)
-        const neededMoney = cost / this.reserveMoneyFraction  - this.ns.getPlayer().money
     
         this.ns.print("Server Buyer")
         this.ns.print(`   NextName: ${this.nextName()}`)
+        this.ns.print(`   Multiplier: ${this.multi}`)
         this.ns.print(`   CurrentRAM: ${ram}`)
         this.ns.print(`   MaxRAM: ${this.maxRam}`)
         this.ns.print(`   Cost: ${this.ns.formatNumber(cost)}`)
-        this.ns.print(`   More Money Needed: ${this.ns.formatNumber(neededMoney)}`)
         this.ns.print(`   Last Time Tried: ${triedSince}`)
 
         type Row = {
@@ -98,6 +96,7 @@ class ServerBuyer {
         servers.sort((a, b) => a.maxRam - b.maxRam)
 
         if (!this.canBuyMore()) {
+            log(this.ns, `Can't buy more`)
             return
         }
     
@@ -105,7 +104,7 @@ class ServerBuyer {
         const ram = Math.pow(2, this.multi)
         const cost = this.ns.getPurchasedServerCost(ram)
     
-        if (cash * this.reserveMoneyFraction < cost) {
+        if (cash < cost) {
             return
         }
 
@@ -149,15 +148,11 @@ export async function main(ns: NS): Promise<void> {
 
     const serverBuyer = new ServerBuyer(ns)
 
-    let lastTimeTriedMs = new Date().getTime()
     // eslint-disable-next-line no-constant-condition
     while(true) {
-        const elapsed = new Date().getTime() - lastTimeTriedMs
-        if (serverBuyer.canBuyMore() && elapsed > 60 * 1000) {
+        const stopwatch = new Stopwatch(ns)
+        if (serverBuyer.canBuyMore() && stopwatch.elapsedMs() > 60 * 1000) {
             serverBuyer.tryToBuyOrUpgrade()
-            lastTimeTriedMs = new Date().getTime()
-        } else {
-            ns.print("No more servers can be bought")
         }
         serverBuyer.dashboard()
         await ns.sleep(1000)

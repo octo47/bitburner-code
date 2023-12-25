@@ -17,6 +17,10 @@ export class SetWithContentEquality<T> {
         return this.items.some(existing => this.getKey(existing) === this.getKey(item));
     }
 
+    public clear() {
+        this.items = []
+    }
+
     public values(): T[] {
         return [...this.items];
     }

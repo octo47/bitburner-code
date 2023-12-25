@@ -96,7 +96,8 @@ function newMoneyData(ns: NS, hostname: string): MoneyData | undefined{
         return undefined
     }
     const currentMoney = ns.getServerMoneyAvailable(hostname)
-    const growThreads = Math.ceil(ns.growthAnalyze(hostname, maxMoney / (currentMoney + 1)))
+    const ratio =  maxMoney / currentMoney
+    const growThreads = Math.ceil(ns.growthAnalyze(hostname, ratio === Infinity ? 2.0 : ratio))
     const optimalHackThreads = Math.ceil(hackShare/ns.hackAnalyze(hostname))
 
     return {

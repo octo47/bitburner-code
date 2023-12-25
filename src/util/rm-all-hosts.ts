@@ -4,8 +4,8 @@ import { Scanner } from 'lib/scanner'
 
 export async function main(ns : NS) : Promise<void> {
     
-    const servers = new Scanner()
-        .scan(ns)
+    const servers = (await new Scanner()
+        .scan(ns))
         .map((item) => ns.getServer(item.hostname))
         
     for (let i = 0; i < servers.length; i++) {

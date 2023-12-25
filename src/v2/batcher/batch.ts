@@ -24,7 +24,7 @@ export async function batchAllocations(ns: NS, target: string): Promise<Allocati
             target: targetServer.hostname,
             threads: targetServer.security.weakenThreads,
             completionTimeMs: targetServer.money.hackTimeMs,
-            workType: WorkType.hacking,
+            workType: WorkType.weaking,
             additionalTimeMs: 0
         }]
     } else {
@@ -33,7 +33,7 @@ export async function batchAllocations(ns: NS, target: string): Promise<Allocati
             target: targetServer.hostname,
             threads: targetServer.money.growThreads,
             completionTimeMs: targetServer.money.hackTimeMs,
-            workType: WorkType.hacking,
+            workType: WorkType.growing,
             additionalTimeMs: 0
         }]
     }
