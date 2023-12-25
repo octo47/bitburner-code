@@ -37,8 +37,8 @@ export class TargetServer extends ServerData {
 
     targetScore(): number {
         return (this.money?.maxMoney ?? 0) 
-            * (this.money?.growthRate ?? Infinity)
-            / ((this.money?.growTimeMs ?? Infinity) + this.security.weakenTimeMs)
+            * (this.money?.growthRate ?? 0)
+            / ((this.money?.growTimeMs ?? 0) + this.security.weakenTimeMs)
             / this.security.minSecurity
     }
 
