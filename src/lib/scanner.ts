@@ -24,8 +24,10 @@ export class Scanner {
     }
 
     async findTargets(ns: NS, config: ScannerConfig = defaultScannerConfig): Promise<TargetServer[]> {
+        const threshold = Math.floor(ns.getHackingLevel() / 2);
         return (await this.scanHosts(ns, config))
             .filter((host) => host.server.moneyMax ?? 0 > 0)
+            .filter((host) => host.server.requiredHackingSkill ?? 0 < threshold)
             .map((host) => new TargetServer(ns, host.hostname, host.path))
     }   
 

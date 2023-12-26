@@ -38,7 +38,8 @@ export class TargetServer extends ServerData {
 
     targetScore(): number {
         return (this.money?.maxMoney ?? 0) 
-            / ((this.money?.growTimeMs ?? 0) + this.security.weakenTimeMs)
+            / ((this.money?.growTimeMs ?? Infinity) + this.security.weakenTimeMs)
+            / this.money?.growThreads ?? Infinity
             / this.security.minSecurity
     }
 
@@ -47,11 +48,11 @@ export class TargetServer extends ServerData {
     }
 
     needsWeakining(): boolean {
-        return this.security.securityLevel > Math.floor(this.security.minSecurity * 1.10)
+        return this.security.securityLevel -  this.security.minSecurity > 1
     }
 
     needsGrowing(): boolean {
-        return  this.money.currentMoney < this.money.maxMoney * 0.99
+        return  this.money.currentMoney < this.money.maxMoney * 0.95
     }
 
     proposedAction(): WorkType {
@@ -70,6 +71,7 @@ export type SecurityData = {
     securityLevel: number
     weakenThreads: number
     weakenTimeMs: number
+    requiredHackingLevel: number
 }
 
 export type MoneyData = {
@@ -95,7 +97,8 @@ function newSecurityData(ns: NS, hostname: string): SecurityData {
         minSecurity: ns.getServerMinSecurityLevel(hostname),
         securityLevel: ns.getServerSecurityLevel(hostname),
         weakenThreads: Math.ceil(Math.max(0, (currentLevel - minLevel)/weakenPerThread)),
-        weakenTimeMs: ns.getWeakenTime(hostname)
+        weakenTimeMs: ns.getWeakenTime(hostname),
+        requiredHackingLevel: ns.getServerRequiredHackingLevel(hostname)
     }
 }
 

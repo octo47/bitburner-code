@@ -63,7 +63,7 @@ export async function main(ns : NS) : Promise<void> {
                 hackingLevel: srv.requiredHackingSkill ?? 0,
                 ramGB: ns.formatNumber(srv.maxRam),
                 cores: srv.cpuCores,
-                status: po.status(srv)
+                status: po.status(srv, hackingLevel)
             }
         }))
 

@@ -52,7 +52,10 @@ class Simulator {
             hostname: string
             securityDiff: number
             securityThreads: number
+            requiredHackingLevel: number
             weakenTime: string
+            money: string,
+            moneyMax: string,
             score: number
         }
 
@@ -61,7 +64,10 @@ class Simulator {
                 hostname: sd.hostname,
                 securityDiff: Math.ceil(sd.security.securityLevel - sd.security.minSecurity),
                 securityThreads: sd.security.weakenThreads,
+                requiredHackingLevel: sd.security.requiredHackingLevel,
                 weakenTime: this.ns.tFormat(sd.security.weakenTimeMs),
+                money: this.ns.formatNumber(sd.money.currentMoney),
+                moneyMax: this.ns.formatNumber(sd.money.maxMoney),
                 score: sd.targetScore()
             }}))
         weakenTargets.sort((a, b) => b.score - a.score)
@@ -69,7 +75,7 @@ class Simulator {
 
         type GrowingRow = {
             hostname: string
-            growth: number
+            growThreads: number
             growthTime: string
             money: string,
             moneyMax: string,
@@ -79,8 +85,8 @@ class Simulator {
         const growTargets: GrowingRow[] = (byWorkType.get(WorkType.growing) ?? [])
             .map((sd) => { return {
                 hostname: sd.hostname,
-                growth: sd.money?.growthRate ?? 0,
-                growthTime: this.ns.tFormat(sd.money.growTimeMs ?? 0),
+                growThreads: sd.money.growThreads,
+                growthTime: this.ns.tFormat(sd.money.growTimeMs),
                 money: this.ns.formatNumber(sd.money.currentMoney),
                 moneyMax: this.ns.formatNumber(sd.money.maxMoney),
                 score: sd.targetScore()
@@ -90,8 +96,6 @@ class Simulator {
 
         type HackingRow = {
             hostname: string
-            growth: number
-            growthTime: string
             hackThreads: number
             money: string,
             moneyMax: string,
@@ -102,8 +106,6 @@ class Simulator {
         const hackRows: HackingRow[] = (byWorkType.get(WorkType.hacking) ?? [])
             .map((sd) => { return {
                 hostname: sd.hostname,
-                growth: sd.money?.growthRate ?? 0,
-                growthTime: this.ns.tFormat(sd.money.growTimeMs ?? 0),
                 hackThreads: sd.money.hackThreads,
                 money: this.ns.formatNumber(sd.money.currentMoney),
                 moneyMax: this.ns.formatNumber(sd.money.maxMoney),

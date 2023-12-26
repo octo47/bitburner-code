@@ -44,9 +44,13 @@ export class PortOpener {
          (server.openPortCount != null && (server.numOpenPortsRequired - server.openPortCount) < 1)
     }
 
-    status(server: Server): string {
+    status(server: Server, hackingSkill: number): string {
         if (server.hasAdminRights) {
             return "HACKED"
+        }
+
+        if (server.requiredHackingSkill ?? 0 > hackingSkill) {
+            return `TOO HIGH ${server.requiredHackingSkill ?? 0}`
         }
 
         if (this.isOpen(server)) {

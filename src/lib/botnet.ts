@@ -14,6 +14,16 @@ type ServerAssignment = {
     allocation: Allocation
 }
 
+type WorkerData = {
+    hostname: string
+    availableRAM: number
+}
+
+type AllocationState = {
+    allocation: Allocation
+    wokersThreads: {[id: string]: number}
+}
+
 export class Botnet {
 
     private ns: NS;
@@ -23,8 +33,8 @@ export class Botnet {
 
     private homeReserveGB = 128
 
-    private workers = new Map<string, number>()
-    private allocations = new SetWithContentEquality<Allocation>((item) => item.id)
+    private workers: WorkerData[] = []
+    private allocations: {[id: string]: AllocationState} = {}
     private targets = new Set<string>()
 
     public constructor(ns: NS) {
@@ -52,20 +62,17 @@ export class Botnet {
         return new Set(this.targets)
     }
 
-    public async targetAllocations(target: string): Promise<Allocation[]> {
-        await this.refresh()
-        return Array.from(this.allocations.values()
-            .filter((item) => item.target === target))
-    }
-
     private async allocateWorkers(allocation: Allocation): Promise<ServerAssignment[]> {
         const assignments: ServerAssignment[] = []
 
         let requiredThreads = allocation.threads
-        // TODO: use
         const scriptRam = workerTypeRAM(this.ns, allocation.workType)
-        for (const [worker, workerRAM] of this.workers) {
-            let workerRAMLeft = workerRAM
+
+        // sort to have most ram on top
+        this.workers.sort((a, b) => a.availableRAM - b.availableRAM)
+
+        for (const worker of this.workers) {
+            let workerRAMLeft = worker.availableRAM
             let threadsOnWorker = 0
             while (workerRAMLeft > scriptRam && requiredThreads > 0) {
                 workerRAMLeft -= scriptRam
@@ -74,7 +81,7 @@ export class Botnet {
             }
             if (threadsOnWorker > 0) {
                 assignments.push({
-                    worker: worker,
+                    worker: worker.hostname,
                     threads: threadsOnWorker,
                     allocation: allocation,
                 })
@@ -88,9 +95,9 @@ export class Botnet {
 
     public async refresh() {
 
-        this.workers.clear()
+        this.workers = []
         this.targets.clear()
-        this.allocations.clear()
+        this.allocations = {}
         this.totalRAM = 0
         this.availableRAM = 0
 
@@ -117,20 +124,31 @@ export class Botnet {
             }
 
             this.totalRAM += serverMaxRam
-            this.workers.set(sd.hostname, ramAvail)
+            this.workers.push({
+                hostname: server.hostname,
+                availableRAM: ramAvail
+            })
             this.availableRAM += ramAvail
             
-            const runningAllocations = await this.findRunningAllocations(sd.hostname)
-            for(const allocation of runningAllocations) {
-                this.allocations.add(allocation)
-                this.targets.add(allocation.target)
+            const assingments = await this.findRunningAllocations(sd.hostname)
+            for(const assingment of assingments) {
+                let merged = this.allocations[assingment.allocation.id]
+                if (merged === undefined) {
+                    merged = {
+                        allocation: assingment.allocation,
+                        wokersThreads: {}
+                    }
+                } 
+                merged.wokersThreads[assingment.worker] = assingment.threads
+                this.allocations[assingment.allocation.id] = merged
+                this.targets.add(assingment.allocation.target)
             }
         }
     }
 
-    private async findRunningAllocations(worker: string): Promise<Allocation[]> {
+    private async findRunningAllocations(worker: string): Promise<ServerAssignment[]> {
 
-        const allocations = new SetWithContentEquality<Allocation>((item) => item.id)
+        const allocations = new SetWithContentEquality<ServerAssignment>((item) => item.allocation.id)
 
         this.ns.ps(worker).forEach((pi) =>  {
             if (pi.args.length == 4 && pi.args[2] === "allocation") {
@@ -138,7 +156,12 @@ export class Botnet {
                 if (allocationJSON === undefined) {
                     error(this.ns, `Unexpceted: not found allocation on ${worker}: ${JSON.stringify(pi)}`)
                 }
-                allocations.add(JSON.parse(allocationJSON))
+                const parsedAllocation = JSON.parse(allocationJSON)
+                allocations.add({
+                    allocation: parsedAllocation,
+                    worker: worker,
+                    threads: pi.threads
+                })
             }
         })
         return Array.from(allocations.values())
@@ -174,22 +197,30 @@ export class Botnet {
         type AllocationRow = {
             id: string
             target: string
-            threads: number
-            timeLeft: string
+            requestedThreads: number
+            runningThreads: number
+            batchTimeLeft: string
+            estimatedTotalTime: string
             workType: string
         }
 
-        const allocations =  Array.from(this.allocations.values())
-        allocations.sort((a, b) => a.completionTimeMs - b.completionTimeMs)
+        const allocations =  Array.from(Object.values(this.allocations))
+        allocations.sort((a, b) => a.allocation.completionTimeMs - b.allocation.completionTimeMs)
 
         const now = new Date().getTime()
 
-        const rows: AllocationRow[] = allocations.map((alloc) => { return {
-            id: alloc.id,
-            target: alloc.target,
-            threads: alloc.threads,
-            timeLeft: this.ns.tFormat(alloc.completionTimeMs - (now - alloc.created)),
-            workType: workTypeName(alloc.workType)
+        const rows: AllocationRow[] = allocations.map((alloc) => { 
+            const allocation = alloc.allocation
+            const runningThreds = Object.values(alloc.wokersThreads).reduce((acc, ram) => acc + ram, 0)
+            const totalTime = allocation.threads / runningThreds * allocation.completionTimeMs
+            return {
+            id: allocation.id,
+            target: allocation.target,
+            requestedThreads: allocation.threads,
+            runningThreads: runningThreds,
+            batchTimeLeft: this.ns.tFormat(allocation.completionTimeMs - (now - allocation.created)),
+            estimatedTotalTime: this.ns.tFormat(totalTime), 
+            workType: workTypeName(allocation.workType)
         }})
 
         tabulate(this.ns, rows)
