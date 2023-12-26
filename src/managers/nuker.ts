@@ -2,7 +2,6 @@ import { NS } from '@ns'
 
 import { PortOpener } from '/lib/port_opener'
 import { Scanner } from '/lib/scanner'
-import { ServerList } from '/lib/serverlist'
 import { tabulate } from '/lib/tabulate';
 
 export async function main(ns : NS) : Promise<void> {
