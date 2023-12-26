@@ -6,7 +6,7 @@ import { ServerData } from '/lib/serverdata';
 import { SetWithContentEquality } from '/lib/set';
 import { Stopwatch } from '/lib/time';
 import { tabulate } from '/lib/tabulate';
-import { workerRAM, workerTypeRAM, workTypeScriptName } from '/lib/worktype';
+import { workerRAM, workerTypeRAM, WorkType, workTypeName, workTypeScriptName } from '/lib/worktype';
 
 type ServerAssignment = {
     worker: string
@@ -169,11 +169,30 @@ export class Botnet {
         this.ns.print(`Botnet: running for ${this.started.elapsedFormatted()}`)
         this.ns.print(`RAM: used ${Math.floor(this.totalRAM-this.availableRAM)}Gb of ${this.totalRAM}Gb`)
 
-        this.ns.print(`Active allocations`)
+        this.ns.print(`Active allocations:`)
+
+        type AllocationRow = {
+            id: string
+            target: string
+            threads: number
+            timeLeft: string
+            workType: string
+        }
+
         const allocations =  Array.from(this.allocations.values())
         allocations.sort((a, b) => a.completionTimeMs - b.completionTimeMs)
-//        allocations.sort((a, b) => a.target.localeCompare(b.target))
-        tabulate(this.ns, allocations)
+
+        const now = new Date().getTime()
+
+        const rows: AllocationRow[] = allocations.map((alloc) => { return {
+            id: alloc.id,
+            target: alloc.target,
+            threads: alloc.threads,
+            timeLeft: this.ns.tFormat(alloc.completionTimeMs - (now - alloc.created)),
+            workType: workTypeName(alloc.workType)
+        }})
+
+        tabulate(this.ns, rows)
     }
 
     public hasCapacity(): boolean {

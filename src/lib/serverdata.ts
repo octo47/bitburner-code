@@ -1,4 +1,5 @@
 import { NS } from '@ns'
+import { WorkType } from '/lib/worktype'
 
 export const hackShare = 0.7
 
@@ -37,7 +38,6 @@ export class TargetServer extends ServerData {
 
     targetScore(): number {
         return (this.money?.maxMoney ?? 0) 
-            * (this.money?.growthRate ?? 0)
             / ((this.money?.growTimeMs ?? 0) + this.security.weakenTimeMs)
             / this.security.minSecurity
     }
@@ -47,11 +47,21 @@ export class TargetServer extends ServerData {
     }
 
     needsWeakining(): boolean {
-        return this.security.securityLevel > Math.floor(this.security.minSecurity * 1.05)
+        return this.security.securityLevel > Math.floor(this.security.minSecurity * 1.10)
     }
 
     needsGrowing(): boolean {
         return  this.money.currentMoney < this.money.maxMoney * 0.99
+    }
+
+    proposedAction(): WorkType {
+        if (this.needsWeakining()) {
+            return WorkType.weaking
+        } else if (this.needsGrowing()) {
+            return WorkType.growing
+        } else {
+            return WorkType.hacking
+        }
     }
 }
 

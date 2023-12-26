@@ -25,6 +25,15 @@ export function workTypeScriptName(type: WorkType): string {
     }
 }
 
+export function workTypeName(type: WorkType): string {
+    switch(type) {
+        case WorkType.hacking: return "hacking"; break
+        case WorkType.growing: return "growing"; break
+        case WorkType.weaking: return "weaking"; break
+        default: throw `Unknown work type ${type}`
+    }
+}
+
 export function scriptWorkType(script: string): WorkType | undefined {
     switch(script) {
         case workerHack: return WorkType.hacking; break
