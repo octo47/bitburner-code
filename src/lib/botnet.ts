@@ -100,6 +100,7 @@ export class Botnet {
             const scanner = new Scanner()
             bots = (await scanner.scan(this.ns))
                 .filter((sd) => sd.owned || sd.hacked)
+                .filter((sd) => sd.hostname !== "home")
         }
         for (const sd of bots) {
             const server = this.ns.getServer(sd.hostname)

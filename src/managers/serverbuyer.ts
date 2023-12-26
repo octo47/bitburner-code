@@ -1,7 +1,6 @@
 import { NS, Server } from "@ns"
 
 import { tabulate } from "/lib/tabulate"
-import { log } from "/lib/log"
 import { Stopwatch } from "/lib/time"
 
 const prefix = "aaa-worker-"
@@ -13,7 +12,8 @@ class ServerBuyer {
     private multi = 2
     private maxRam: number
     private maxServers: number
-    private lastTimeTried = new Date().getTime()
+    private sinceLastRun: Stopwatch | undefined
+    private decision: string | undefined
 
 
     constructor(ns: NS) {
@@ -39,10 +39,6 @@ class ServerBuyer {
         this.multi = Math.max(2, this.multi-1)
     }
 
-    canBuyMore() {
-        return Math.pow(2, this.multi) >= this.maxRam
-    }
-
     dashboard() {
 
         this.ns.clearLog()
@@ -52,8 +48,7 @@ class ServerBuyer {
 
         servers.sort((a, b) => a.ramUsed - b.ramUsed)
 
-        const triedSince = this.ns.tFormat(
-            new Date().getTime() - this.lastTimeTried)
+        const triedSince = this.sinceLastRun?.elapsedFormatted()
 
         const ram = Math.pow(2, this.multi)
         const cost = this.ns.getPurchasedServerCost(ram)
@@ -65,6 +60,7 @@ class ServerBuyer {
         this.ns.print(`   MaxRAM: ${this.maxRam}`)
         this.ns.print(`   Cost: ${this.ns.formatNumber(cost)}`)
         this.ns.print(`   Last Time Tried: ${triedSince}`)
+        this.ns.print(`   Buying decision: ${this.decision}`)
 
         type Row = {
             hostname: string
@@ -81,13 +77,17 @@ class ServerBuyer {
                 cpu: server.cpuCores,
             }
         })
+        rows.sort((a, b) => b.ramUsed.localeCompare(a.ramUsed))
     
         tabulate(this.ns, rows)
     }
 
     tryToBuyOrUpgrade() {
     
-        this.lastTimeTried = new Date().getTime()
+        if (this.sinceLastRun?.elapsedMs ?? 60000 < 60000) {
+            return
+        }
+        this.sinceLastRun = new Stopwatch(this.ns)
 
         const servers: Server[] = this.ns.getPurchasedServers()
             .map((name) => this.ns.getServer(name));
@@ -95,8 +95,8 @@ class ServerBuyer {
         // put smallest in front
         servers.sort((a, b) => a.maxRam - b.maxRam)
 
-        if (!this.canBuyMore()) {
-            log(this.ns, `Can't buy more`)
+        if (Math.pow(2, this.multi) > this.maxRam) {
+            this.decision = `Reached maximum possible memory: ${this.maxRam}`
             return
         }
     
@@ -105,6 +105,15 @@ class ServerBuyer {
         const cost = this.ns.getPurchasedServerCost(ram)
     
         if (cash < cost) {
+            this.decision = `Not enough money: ${cash} < ${cost}`
+            return
+        }
+
+        const currentlyUsedRAM = servers.reduce((accum, srv) => accum + srv.ramUsed, 0)
+        const currentlyAvailableRAM = servers.reduce((accum, srv) => accum + srv.maxRam, 0)
+
+        if (currentlyAvailableRAM > 0 || currentlyUsedRAM / currentlyAvailableRAM < 0.8) {
+            this.decision = `Low utilization: <${Math.floor(currentlyUsedRAM / currentlyAvailableRAM * 100)}%`
             return
         }
 
@@ -150,10 +159,7 @@ export async function main(ns: NS): Promise<void> {
 
     // eslint-disable-next-line no-constant-condition
     while(true) {
-        const stopwatch = new Stopwatch(ns)
-        if (serverBuyer.canBuyMore() && stopwatch.elapsedMs() > 60 * 1000) {
-            serverBuyer.tryToBuyOrUpgrade()
-        }
+        serverBuyer.tryToBuyOrUpgrade()
         serverBuyer.dashboard()
         await ns.sleep(1000)
     }
