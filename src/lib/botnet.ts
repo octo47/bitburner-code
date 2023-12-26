@@ -6,7 +6,7 @@ import { ServerData } from '/lib/serverdata';
 import { SetWithContentEquality } from '/lib/set';
 import { Stopwatch } from '/lib/time';
 import { tabulate } from '/lib/tabulate';
-import { workerRAM, workerTypeRAM, WorkType, workTypeName, workTypeScriptName } from '/lib/worktype';
+import { workerRAM, workerTypeRAM, workTypeName, workTypeScriptName } from '/lib/worktype';
 
 type ServerAssignment = {
     worker: string
