@@ -39,8 +39,31 @@ export class PortOpener {
         })
     }
 
+    isOpen(server: Server): boolean {
+        return server.numOpenPortsRequired == null ||
+         (server.openPortCount != null && (server.numOpenPortsRequired - server.openPortCount) < 1)
+    }
+
+    status(server: Server): string {
+        if (server.hasAdminRights) {
+            return "HACKED"
+        }
+
+        if (this.isOpen(server)) {
+            return "OPEN"
+        }
+        const toOpen = server.numOpenPortsRequired ?? 0
+        const alreadyOpen = server.openPortCount ?? 0
+
+        if (toOpen - alreadyOpen === 0) {
+            return "OPEN"
+        }
+
+        return `NEED ${toOpen - alreadyOpen} OPEN PORTS`
+    }
+
     open(server: Server): boolean {
-        if (server.numOpenPortsRequired == null) {
+        if (this.isOpen(server)) {
             return true
         }
         for (const idx in this.available) {
@@ -50,7 +73,7 @@ export class PortOpener {
             }
             opener.opener(server.hostname)
         }
-        return server.openPortCount != null && (server.numOpenPortsRequired - server.openPortCount) < 1
+        return this.isOpen(server)
     }
 
 }

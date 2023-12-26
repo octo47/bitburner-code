@@ -3,6 +3,7 @@ import { NS } from '@ns'
 import { PortOpener } from '/lib/port_opener'
 import { Scanner } from '/lib/scanner'
 import { ServerList } from '/lib/serverlist'
+import { tabulate } from '/lib/tabulate';
 
 export async function main(ns : NS) : Promise<void> {
 
@@ -19,50 +20,59 @@ export async function main(ns : NS) : Promise<void> {
 
     // eslint-disable-next-line no-constant-condition
     while (true) {
+
+        ns.clearLog()
+
         const scanner = new Scanner()
         const hosts = await scanner.scan(ns)
 
-        const toHack= hosts.filter((elem) => elem.hacked == false)
+        const servers = hosts.map((hd) => ns.getServer(hd.hostname))
+            .filter((srv) => !srv.purchasedByPlayer)
+
+        const toHack= hosts
+            .filter((elem) => elem.hacked == false)
+            .map((serverData) => ns.getServer(serverData.hostname))
 
         const hackingLevel = ns.getPlayer().skills.hacking
-        let hacked = false
         const po = new PortOpener(ns)
-        for (const idx in toHack) {
-            const hostPath = toHack[idx]
-            if (hostPath.hacked) {
-                continue
-            }
 
-            const server = ns.getServer(hostPath.hostname)
-
+        for (const server of toHack) {
             if (!server.requiredHackingSkill) {
                 continue
             }
 
             if (server.requiredHackingSkill  > hackingLevel) {
-                ns.printf("%s TOO WEAK: %d < %d", 
-                    server.hostname, hackingLevel, 
-                    server.requiredHackingSkill)
                 continue
             }
 
             if (po.open(server)) {
-                ns.nuke(hostPath.hostname)
-                if (ns.getServer(hostPath.hostname).hasAdminRights) {
-                    ns.printf("%s succesfully rooted", hostPath.hostname)
-                    hacked = true
-                }
-            } else {
-                ns.printf("%s failed to open", hostPath.hostname)
+                ns.nuke(server.hostname)
+            }       
+        }
+
+        type DashboardRow = {
+            hostname: string
+            hackingLevel: number
+            ramGB: string,
+            cores: number,
+            status: string
+        }
+
+        const dashboard: DashboardRow[] = Array.from(servers.map((srv) =>{
+            return {
+                hostname: srv.hostname,
+                hackingLevel: srv.requiredHackingSkill ?? 0,
+                ramGB: ns.formatNumber(srv.maxRam),
+                cores: srv.cpuCores,
+                status: po.status(srv)
             }
-        }
+        }))
 
-        new ServerList(hosts).save(ns)
+        dashboard.sort((a, b) => a.hostname.localeCompare(b.hostname))
 
-        if (!hacked) {
-            ns.printf("nothing rooted, sleeping")
-            await ns.sleep(60000)
-        }
+        tabulate(ns, dashboard)
+
+        await ns.sleep(10000)
     }
 
 }
