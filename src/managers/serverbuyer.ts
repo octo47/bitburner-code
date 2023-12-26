@@ -104,11 +104,6 @@ class ServerBuyer {
         const ram = Math.pow(2, this.multi)
         const cost = this.ns.getPurchasedServerCost(ram)
     
-        if (cash < cost) {
-            this.decision = `Not enough money: ${cash} < ${cost}`
-            return
-        }
-
         const currentlyUsedRAM = servers.reduce((accum, srv) => accum + srv.ramUsed, 0)
         const currentlyAvailableRAM = servers.reduce((accum, srv) => accum + srv.maxRam, 0)
 
@@ -117,7 +112,13 @@ class ServerBuyer {
             return
         }
 
+        if (cash < cost) {
+            this.decision = `Not enough money: ${cash} < ${cost}`
+            return
+        }
+
         if (servers.length < this.maxServers) {
+            this.decision = `Purchased ${this.nextName()}`
             this.buyServer()
         } else {
             const smallest = servers[0]
@@ -126,6 +127,7 @@ class ServerBuyer {
             if (currentRAM <= this.ns.getServerMaxRam(smallest.hostname)) {
                 this.multi++
             }
+            this.decision = `Replaced ${smallest.hostname} with ${this.nextName()}`
             this.replaceServer(smallest.hostname)
         }
 

@@ -21,6 +21,8 @@ export class Botnet {
     private availableRAM = 0
     private totalRAM = 0
 
+    private homeReserveGB = 128
+
     private workers = new Map<string, number>()
     private allocations = new SetWithContentEquality<Allocation>((item) => item.id)
     private targets = new Set<string>()
@@ -92,20 +94,29 @@ export class Botnet {
         this.totalRAM = 0
         this.availableRAM = 0
 
-        let bots: ServerData[] = this.ns.getPurchasedServers()
+        const bots: ServerData[] = this.ns.getPurchasedServers()
             .map((name) => new ServerData(this.ns, name))
 
-        if (bots.length === 0) {
-            // no bots? using hacked servers instead
-            const scanner = new Scanner()
-            bots = (await scanner.scan(this.ns))
-                .filter((sd) => sd.owned || sd.hacked)
-                .filter((sd) => sd.hostname !== "home")
-        }
+        const scanner = new Scanner()
+        const hackedServers = (await scanner.scan(this.ns))
+            .filter((sd) => sd.owned || sd.hacked)
+        hackedServers.forEach((srv) => bots.push(srv))
+
         for (const sd of bots) {
             const server = this.ns.getServer(sd.hostname)
-            const ramAvail = server.maxRam - server.ramUsed
-            this.totalRAM += server.maxRam
+            let ramAvail = server.maxRam - server.ramUsed
+            let serverMaxRam = server.maxRam
+
+            // amke sure we have a reserve on our home machine
+            if (sd.hostname === "home") {
+                ramAvail -= this.homeReserveGB
+                serverMaxRam -= this.homeReserveGB
+                if (ramAvail < 0) {
+                    continue
+                }
+            }
+
+            this.totalRAM += serverMaxRam
             this.workers.set(sd.hostname, ramAvail)
             this.availableRAM += ramAvail
             
