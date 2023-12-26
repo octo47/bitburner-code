@@ -25,7 +25,7 @@ export class Batcher {
             .filter((target) => target.hacked)
             .filter((target) => !activeTargets.has(target.hostname))
         targets.sort((a, b) => {
-            const byWorkType = a.proposedAction() - b.proposedAction()
+            const byWorkType = b.proposedAction() - a.proposedAction()
             if (byWorkType === 0) {
                 return b.targetScore() - a.targetScore()
             } else {
