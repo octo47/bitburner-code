@@ -31,7 +31,8 @@ class Simulator {
 
         ttabulate(this.ns, scripts)
 
-        const targets: TargetServer[] = await scanner.findTargets(this.ns)
+        const targets: TargetServer[] = (await scanner.findTargets(this.ns))
+            .filter((tgt) => tgt.hacked)
         targets.sort((a, b) => b.targetScore() - a.targetScore())
 
         type WeakenRow = {
