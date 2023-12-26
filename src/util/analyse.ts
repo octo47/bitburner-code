@@ -1,8 +1,9 @@
 import { NS } from '@ns'
-import { allWorkTypes, workTypeScriptName } from '/lib/worktype';
+import { allWorkTypes, workTypeName, workTypeScriptName } from '/lib/worktype';
 import { Scanner } from "/lib/scanner";
 import { TargetServer } from '/lib/serverdata';
 import { ttabulate } from '/lib/tabulate';
+import { WorkType } from '/lib/worktype';
 
 class Simulator {
 
@@ -35,47 +36,92 @@ class Simulator {
             .filter((tgt) => tgt.hacked)
         targets.sort((a, b) => b.targetScore() - a.targetScore())
 
+        const byWorkType = new Map<WorkType, TargetServer[]>()
+
+        targets.forEach((tgt) => {
+            let array = byWorkType.get(tgt.proposedAction())
+            if (array == undefined) {
+                array = [tgt]
+                byWorkType.set(tgt.proposedAction(), array)
+            } else {
+                array.push(tgt)
+            }
+        })
+
         type WeakenRow = {
             hostname: string
             securityDiff: number
             securityThreads: number
+            requiredHackingLevel: number
             weakenTime: string
+            money: string,
+            moneyMax: string,
             score: number
         }
 
-        const weakenTargets: WeakenRow[] = targets
+        const weakenTargets: WeakenRow[] = (byWorkType.get(WorkType.weaking) ?? [])
             .map((sd => { return {
                 hostname: sd.hostname,
                 securityDiff: Math.ceil(sd.security.securityLevel - sd.security.minSecurity),
                 securityThreads: sd.security.weakenThreads,
+                requiredHackingLevel: sd.security.requiredHackingLevel,
                 weakenTime: this.ns.tFormat(sd.security.weakenTimeMs),
+                money: this.ns.formatNumber(sd.money.currentMoney),
+                moneyMax: this.ns.formatNumber(sd.money.maxMoney),
                 score: sd.targetScore()
             }}))
-            .filter((wr) => wr.securityDiff > 0)
         weakenTargets.sort((a, b) => b.score - a.score)
 
-        ttabulate(this.ns, weakenTargets)
 
-        type MoneyRow = {
+        type GrowingRow = {
             hostname: string
-            growth: number
+            growThreads: number
             growthTime: string
-            hackThreads: number
+            money: string,
+            moneyMax: string,
             score: number
         }
 
-        const moneyTargets: MoneyRow[] = targets
-            .filter((sd) => sd.security.securityLevel - sd.security.minSecurity < 5)
+        const growTargets: GrowingRow[] = (byWorkType.get(WorkType.growing) ?? [])
             .map((sd) => { return {
                 hostname: sd.hostname,
-                growth: sd.money?.growthRate ?? 0,
-                growthTime: this.ns.tFormat(sd.money.growTimeMs ?? 0),
-                hackThreads: sd.money.hackThreads,
+                growThreads: sd.money.growThreads,
+                growthTime: this.ns.tFormat(sd.money.growTimeMs),
+                money: this.ns.formatNumber(sd.money.currentMoney),
+                moneyMax: this.ns.formatNumber(sd.money.maxMoney),
                 score: sd.targetScore()
             }})
-        moneyTargets.sort((a, b) => b.score - a.score)
+        growTargets.sort((a, b) => b.score - a.score)
 
-        ttabulate(this.ns, moneyTargets)
+
+        type HackingRow = {
+            hostname: string
+            hackThreads: number
+            money: string,
+            moneyMax: string,
+            action: string
+            score: number
+        }
+
+        const hackRows: HackingRow[] = (byWorkType.get(WorkType.hacking) ?? [])
+            .map((sd) => { return {
+                hostname: sd.hostname,
+                hackThreads: sd.money.hackThreads,
+                money: this.ns.formatNumber(sd.money.currentMoney),
+                moneyMax: this.ns.formatNumber(sd.money.maxMoney),
+                action: workTypeName(sd.proposedAction()),
+                score: sd.targetScore()
+            }})
+        hackRows.sort((a, b) => b.score - a.score)
+
+        this.ns.tprint("Hack targets:")
+        ttabulate(this.ns, hackRows)
+
+        this.ns.tprint("Grow targets:")
+        ttabulate(this.ns, growTargets)
+
+        this.ns.tprint("Weaken targets:")
+        ttabulate(this.ns, weakenTargets)
     }
 }
 
