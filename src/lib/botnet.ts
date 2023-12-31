@@ -31,7 +31,7 @@ export class Botnet {
     private availableRAM = 0
     private totalRAM = 0
 
-    private homeReserveGB = 128
+    private homeReserveGB = 32
 
     private workers: WorkerData[] = []
     private allocations: {[id: string]: AllocationState} = {}
@@ -66,6 +66,7 @@ export class Botnet {
         const assignments: ServerAssignment[] = []
 
         let requiredThreads = allocation.threads
+        let allocatedThreads = 0
         const scriptRam = workerTypeRAM(this.ns, allocation.workType)
 
         // sort to have most ram on top
@@ -85,10 +86,15 @@ export class Botnet {
                     threads: threadsOnWorker,
                     allocation: allocation,
                 })
+                allocatedThreads += threadsOnWorker
             }
             if (requiredThreads === 0) {
                 break
             }
+        }
+        if (allocatedThreads/requiredThreads < 0.2) {
+            // do not schedule less then 20% requested threads
+            return []
         }
         return assignments
     }
