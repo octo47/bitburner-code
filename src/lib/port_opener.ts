@@ -20,10 +20,13 @@ class OpenerProgram {
 
 export class PortOpener {
 
-    available: OpenerProgram[] = [];
+    private available: OpenerProgram[] = [];
+    private ns: NS
     
     constructor(ns: NS) {
     
+        this.ns = ns
+        
         const openers = [
             new OpenerProgram("BruteSSH.exe", (server: Server) => { return server.sshPortOpen }, (hostname: string) => { return ns.brutessh(hostname) }),
             new OpenerProgram("FTPCrack.exe", (server: Server) => { return server.ftpPortOpen }, (hostname: string) => { return ns.ftpcrack(hostname) }),
@@ -33,7 +36,7 @@ export class PortOpener {
         ]
         
         openers.forEach((opener) => {
-            if ( ns.fileExists(opener.name) ) {
+            if ( this.ns.fileExists(opener.name) ) {
                 this.available.push(opener)
             }
         })
@@ -50,7 +53,7 @@ export class PortOpener {
         }
 
         if (server.requiredHackingSkill ?? 0 > hackingSkill) {
-            return `TOO HIGH ${server.requiredHackingSkill ?? 0}`
+            return `TOO WEAK ${server.requiredHackingSkill ?? 0}`
         }
 
         if (this.isOpen(server)) {
@@ -63,13 +66,21 @@ export class PortOpener {
             return "OPEN"
         }
 
-        return `NEED ${toOpen - alreadyOpen} OPEN PORTS`
+        return `${toOpen - alreadyOpen} PORTS TO OPEN`
     }
 
     open(server: Server): boolean {
         if (this.isOpen(server)) {
             return true
         }
+        if (!server.requiredHackingSkill) {
+            return false
+        }
+
+        if (server.requiredHackingSkill > this.ns.getHackingLevel()) {
+            return false
+        }
+
         for (const idx in this.available) {
             const opener = this.available[idx]
             if (opener.isOpen(server)) {
@@ -78,6 +89,14 @@ export class PortOpener {
             opener.opener(server.hostname)
         }
         return this.isOpen(server)
+    }
+
+    nuke(server: Server): boolean {
+        if (this.open(server)) {
+            this.ns.nuke(server.hostname)
+            return server.hasAdminRights
+        }
+        return false
     }
 
 }

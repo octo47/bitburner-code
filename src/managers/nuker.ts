@@ -6,16 +6,7 @@ import { tabulate } from '/lib/tabulate';
 
 export async function main(ns : NS) : Promise<void> {
 
-    ns.disableLog("disableLog");
-    ns.disableLog("getServerMaxMoney");
-    ns.disableLog("getServerMaxRam");
-    ns.disableLog("getServerMoneyAvailable");
-    ns.disableLog("getServerUsedRam");
-    ns.disableLog("getServerMinSecurityLevel");
-    ns.disableLog("getServerSecurityLevel");
-    ns.disableLog("getServerGrowth");
-    ns.disableLog("scan");
-    ns.disableLog("sleep");
+    ns.disableLog("ALL")
 
     // eslint-disable-next-line no-constant-condition
     while (true) {
@@ -36,17 +27,7 @@ export async function main(ns : NS) : Promise<void> {
         const po = new PortOpener(ns)
 
         for (const server of toHack) {
-            if (!server.requiredHackingSkill) {
-                continue
-            }
-
-            if (server.requiredHackingSkill  > hackingLevel) {
-                continue
-            }
-
-            if (po.open(server)) {
-                ns.nuke(server.hostname)
-            }       
+            po.nuke(server)
         }
 
         type DashboardRow = {
