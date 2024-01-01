@@ -14,6 +14,7 @@ class ServerBuyer {
     private maxServers: number
     private sinceLastRun: Stopwatch | undefined
     private decision: string | undefined
+    private targetUtilization = 0.8
 
 
     constructor(ns: NS) {
@@ -52,7 +53,7 @@ class ServerBuyer {
 
         const ram = Math.pow(2, this.multi)
         const cost = this.ns.getPurchasedServerCost(ram)
-    
+
         this.ns.print("Server Buyer")
         this.ns.print(`   NextName: ${this.nextName()}`)
         this.ns.print(`   Multiplier: ${this.multi}`)
@@ -66,6 +67,7 @@ class ServerBuyer {
             hostname: string
             ramMax: string
             ramUsed: string
+            utilization: string
             cpu: number
         }
 
@@ -74,6 +76,7 @@ class ServerBuyer {
                 hostname: server.hostname,
                 ramMax: this.ns.formatRam(server.maxRam),
                 ramUsed: this.ns.formatRam(server.ramUsed),
+                utilization: `${(Math.floor(server.ramUsed / server.maxRam * 100))}%`,
                 cpu: server.cpuCores,
             }
         })
@@ -84,9 +87,6 @@ class ServerBuyer {
 
     tryToBuyOrUpgrade() {
     
-        if (this.sinceLastRun?.elapsedMs ?? 60000 < 60000) {
-            return
-        }
         this.sinceLastRun = new Stopwatch(this.ns)
 
         const servers: Server[] = this.ns.getPurchasedServers()
@@ -107,13 +107,13 @@ class ServerBuyer {
         const currentlyUsedRAM = servers.reduce((accum, srv) => accum + srv.ramUsed, 0)
         const currentlyAvailableRAM = servers.reduce((accum, srv) => accum + srv.maxRam, 0)
 
-        if (currentlyAvailableRAM > 0 || currentlyUsedRAM / currentlyAvailableRAM < 0.8) {
-            this.decision = `Low utilization: <${Math.floor(currentlyUsedRAM / currentlyAvailableRAM * 100)}%`
+        if (currentlyAvailableRAM === 0 || ((currentlyUsedRAM / currentlyAvailableRAM) < this.targetUtilization)) {
+            this.decision = `Low utilization: ${Math.floor(currentlyUsedRAM / currentlyAvailableRAM * 100)}% < ${this.targetUtilization * 100}%`
             return
         }
 
         if (cash < cost) {
-            this.decision = `Not enough money: ${cash} < ${cost}`
+            this.decision = `Not enough money: ${Math.floor(cash)} < ${Math.floor(cost)}`
             return
         }
 
@@ -163,7 +163,7 @@ export async function main(ns: NS): Promise<void> {
     while(true) {
         serverBuyer.tryToBuyOrUpgrade()
         serverBuyer.dashboard()
-        await ns.sleep(1000)
+        await ns.sleep(5000)
     }
 }
 
