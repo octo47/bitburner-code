@@ -107,17 +107,13 @@ export class Botnet {
         this.totalRAM = 0
         this.availableRAM = 0
 
-        const bots: ServerData[] = this.ns.getPurchasedServers()
-            .map((name) => new ServerData(this.ns, name))
-
         const scanner = new Scanner()
-        const hackedServers = (await scanner.scan(this.ns))
-            .filter((sd) => sd.owned || sd.hacked)
-        hackedServers.forEach((srv) => bots.push(srv))
+        const bots = (await scanner.scan(this.ns))
+            .filter((sd) => sd.hacked || sd.owned);
 
         for (const sd of bots) {
             const server = this.ns.getServer(sd.hostname)
-            let ramAvail = server.maxRam - server.ramUsed
+            let ramAvail = Math.floor(server.maxRam - server.ramUsed)
             let serverMaxRam = server.maxRam
 
             // amke sure we have a reserve on our home machine
@@ -150,6 +146,8 @@ export class Botnet {
                 this.targets.add(assingment.allocation.target)
             }
         }
+
+        this.workers.sort((a, b) => b.availableRAM - a.availableRAM)
     }
 
     private async findRunningAllocations(worker: string): Promise<ServerAssignment[]> {
@@ -181,16 +179,18 @@ export class Botnet {
         if (!this.ns.scp(script, server)) {
             throw `Failed to copy ${script} to ${server}`
         }
-        if (!this.ns.exec(script, server, 
+        if (!this.ns.exec(
+                script, 
+                server, 
                 assignment.threads, 
                 allocation.target, 
                 allocation.additionalTimeMs ?? 0,
                 "allocation",
                 JSON.stringify(assignment.allocation))) {
-                error(this.ns, JSON.stringify({
-                    "server": server,
-                    "allocation": allocation
-                }))
+                    error(this.ns, JSON.stringify({
+                        "server": server,
+                        "assignment": assignment
+                    }))
         }
     }
 
