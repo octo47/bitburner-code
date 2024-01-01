@@ -2,7 +2,6 @@ import { NS } from '@ns'
 import { Allocation } from './allocation';
 import { error } from '/lib/log';
 import { Scanner } from '/lib/scanner';
-import { ServerData } from '/lib/serverdata';
 import { SetWithContentEquality } from '/lib/set';
 import { Stopwatch } from '/lib/time';
 import { tabulate } from '/lib/tabulate';
@@ -220,13 +219,13 @@ export class Botnet {
             const runningThreds = Object.values(alloc.wokersThreads).reduce((acc, ram) => acc + ram, 0)
             const totalTime = allocation.threads / runningThreds * allocation.completionTimeMs
             return {
-            id: allocation.id,
-            target: allocation.target,
-            requestedThreads: allocation.threads,
-            runningThreads: runningThreds,
-            batchTimeLeft: this.ns.tFormat(allocation.completionTimeMs - (now - allocation.created)),
-            estimatedTotalTime: this.ns.tFormat(totalTime), 
-            workType: workTypeName(allocation.workType)
+                id: allocation.id,
+                target: allocation.target,
+                requestedThreads: allocation.threads,
+                runningThreads: runningThreds,
+                batchTimeLeft: this.ns.tFormat(allocation.completionTimeMs - (now - allocation.created)),
+                estimatedTotalTime: this.ns.tFormat(totalTime), 
+                workType: workTypeName(allocation.workType)
         }})
 
         tabulate(this.ns, rows)
