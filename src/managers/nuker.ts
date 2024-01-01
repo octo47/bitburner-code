@@ -48,7 +48,7 @@ export async function main(ns : NS) : Promise<void> {
             }
         }))
 
-        dashboard.sort((a, b) => a.hostname.localeCompare(b.hostname))
+        dashboard.sort((a, b) => a.hackingLevel - b.hackingLevel)
 
         tabulate(ns, dashboard)
 
